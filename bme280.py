@@ -1,3 +1,4 @@
+import os
 import time
 
 import smbus
@@ -234,3 +235,23 @@ class BME280Recorder:
 
         self.set_register(CONFIG_REGISTER, regval, 0, 3)
         self._iir_filter = val
+
+    def output_session(self, fn, waitsec=30):
+        if not os.path.exists(fn):
+            with open(fn, 'w') as f:
+                f.write('time,pressure,temperature,humidity')
+                f.write('\n')
+
+        while True:
+            sttime = time.time()
+            svals = [str(val) for val in self.read()]
+
+            timestr = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(sttime))
+            svals.insert(0, timestr)
+
+            with open(fn, 'a') as f:
+                f.write(','.join(svals) + '\n')
+
+            timeleft = sttime - time.time() + 30
+            if timeleft > 0:
+                time.sleep(timeleft)
