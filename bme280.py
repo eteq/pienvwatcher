@@ -91,9 +91,8 @@ class BME280Recorder:
     def read(self):
         if self._mode == 'forced':
             self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
-            while self.read_register(STATUS_REGISTER) != 0:
-                # wait for a ms, which should be plenty of time
-                time.sleep(0.001)
+            # wait for a ms, which should be plenty of time
+            time.sleep(0.001)
 
         return self.read_raw()
 
