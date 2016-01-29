@@ -27,8 +27,8 @@ class BME280Recorder:
         # initial mode is sleep after reset
         self._mode = 'sleep'
 
-        self.humidity_oversampling = 1
-        self.pressure_oversampling = 1
+        self.humidity_oversampling = 4
+        self.pressure_oversampling = 16
         self.temperature_oversampling = 1
 
         self.t_standby_ms = 250
@@ -60,9 +60,12 @@ class BME280Recorder:
         else:
             regval = self.read_register(regaddr)
             # first clear out the old value
+            print('Start on', bin(regval))
             new_regval = regval & ~((2**nbits-1) << startbit)
+            print('Then', bin(new_regval))
             # now apply the new one
             new_regval |= val << startbit
+            print('End on', bin(new_regval))
 
         self.bus.write_byte_data(self.address, regaddr, val)
 
