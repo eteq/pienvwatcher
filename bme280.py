@@ -104,8 +104,28 @@ class BME280Recorder:
         return self._t_standby_ms
     @t_standby_ms.setter
     def t_standby_ms(self, val):
+        if val == 0.5:
+            regval = 0b000
+        elif val == 62.5:
+            regval = 0b001
+        elif val == 125:
+            regval = 0b010
+        elif val == 250:
+            regval = 0b011
+        elif val == 500:
+            regval = 0b100
+        elif val == 1000:
+            regval = 0b101
+        elif val == 10:
+            regval = 0b110
+        elif val == 20:
+            regval = 0b111
+        else:
+            raise ValueError('Invalid t_standby_ms: {}'.format(val))
+
+        self.set_register(CONFIG_REGISTER, regval, 5, 3)
+
         self._t_standby_ms = val
-        raise NotImplementedError
 
 
     def _oversampling_val_to_regval(self, val):
