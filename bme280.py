@@ -15,7 +15,7 @@ class BME280Recorder:
     
     def check_device_present(self):
         devid = self.bus.read_byte_data(self.address, 0xD0)
-        if devid != hex(0x60):
+        if devid != 0x60:
             raise ValueError('Device is not a BME280 (id != 60).')
 
     def reset_device(self):
