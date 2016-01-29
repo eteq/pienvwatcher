@@ -60,14 +60,11 @@ class BME280Recorder:
         else:
             regval = self.read_register(regaddr)
             # first clear out the old value
-            print('Start on', bin(regval))
             new_regval = regval & ~((2**nbits-1) << startbit)
-            print('Then', bin(new_regval))
             # now apply the new one
             new_regval |= val << startbit
-            print('End on', bin(new_regval))
 
-        self.bus.write_byte_data(self.address, regaddr, val)
+        self.bus.write_byte_data(self.address, regaddr, new_regval)
 
     def read_raw(self):
         """
