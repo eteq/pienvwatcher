@@ -132,7 +132,7 @@ class BME280Recorder:
         if val is None:
             val = 0
 
-        if val == self._humidity_oversampling:
+        if getattr(self, '_humidity_oversampling', None) == val:
             return
 
         regval = self._oversampling_val_to_regval(val)
@@ -140,7 +140,7 @@ class BME280Recorder:
 
         # Datasheet 5.4.5 says you need to write to the ctrl_meas to get the 
         # humidity settings to change
-        measval = self.get_register(CTRL_MEAS_REGISTER)
+        measval = self.read_register(CTRL_MEAS_REGISTER)
         self.set_register(CTRL_MEAS_REGISTER, measval)
 
         self._humidity_oversampling = val
@@ -153,7 +153,7 @@ class BME280Recorder:
         if val is None:
             val = 0
 
-        if val == self._pressure_oversampling:
+        if getattr(self, '_pressure_oversampling', None) == val:
             return
 
         regval = self._oversampling_val_to_regval(val)
@@ -169,7 +169,7 @@ class BME280Recorder:
         if val is None:
             val = 0
 
-        if val == self._pressure_oversampling_temperature_oversampling:
+        if getattr(self, '_temperature_oversampling', None) == val:
             return
 
         regval = self._oversampling_val_to_regval(val)
@@ -185,7 +185,7 @@ class BME280Recorder:
         if val is None:
             val = 0
 
-        if val == self._iir_filter:
+        if getattr(self, '_iir_filter', None) == val:
             return
 
         if val == 0:
