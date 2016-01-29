@@ -10,6 +10,7 @@ RESET_REGISTER = 0xE0
 CTRL_HUM_REGISTER = 0xF2
 CTRL_MEAS_REGISTER = 0xF4
 CONFIG_REGISTER = 0xF5
+DATA_START = 0xF7
 
 BME280_ID = 0x60
 RESET_CODE = 0xB6
@@ -64,6 +65,25 @@ class BME280Recorder:
             new_regval |= val << startbit
 
         self.bus.write_byte_data(self.address, regaddr, val)
+
+    def read_raw(self):
+        """
+        Reads the pressure, temperature, and humidity from their registers and 
+        returns them as raw ADC integers.
+        """
+        data_regs = self.bus.read_i2c_block_data(0x77, DATA_START, 8)
+
+        pres_val = data_regs[2] >> 4
+        pres_val +=  data_regs[1] << 4
+        pres_val +=  data_regs[0] << 12
+
+        temp_val = data_regs[5] >> 4
+        temp_val +=  data_regs[4] << 4
+        temp_val +=  data_regs[3] << 12
+
+        hum_val = data_regs[7] + (data_regs[6] << 8) 
+
+        return pres_val, temp_val, hum_val
 
 
     @property
