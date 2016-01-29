@@ -17,7 +17,7 @@ BME280_ID = 0x60
 RESET_CODE = 0xB6
 
 class BME280Recorder:
-    def __init__(self, address=0x77, i2cbusnum=1):
+    def __init__(self, address=0x77, i2cbusnum=1, mode='forced'):
         self.i2cbusnum = i2cbusnum
         self.bus = smbus.SMBus(self.i2cbusnum)
         self.address = address
@@ -35,7 +35,7 @@ class BME280Recorder:
         self.t_standby_ms = 250
         self.iir_filter = 0
 
-        self.mode = 'normal'
+        self.mode = mode
     
     def check_device_present(self):
         devid = self.bus.read_byte_data(self.address, ID_REGISTER)
