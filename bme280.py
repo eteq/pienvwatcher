@@ -70,6 +70,9 @@ class BME280Recorder:
         """
         Reads the pressure, temperature, and humidity from their registers and 
         returns them as raw ADC integers.
+
+        Note that this does *not* force a read in forced mode - use `read` for
+        that.
         """
         data_regs = self.bus.read_i2c_block_data(0x77, DATA_START, 8)
 
@@ -84,6 +87,15 @@ class BME280Recorder:
         hum_val = data_regs[7] + (data_regs[6] << 8) 
 
         return pres_val, temp_val, hum_val
+
+    def read(self):
+        if self._mode == 'forced':
+            self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
+        while self.get_register(STATUS_REGISTER) != 0:
+            # wait for a ms, which should be plenty of time
+            time.sleep(0.001)
+
+        return self.read_raw()
 
 
     @property
