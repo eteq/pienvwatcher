@@ -215,32 +215,32 @@ class BME280Recorder:
         var1 = ((((1)<<47)+var1))*(dig_P1)>>33
 
         p = 1048576-adc_P
-        p = (((p<<31)-var2)*3125)/var1
+        p = (((p<<31)-var2)*3125)//var1
         var1 = (dig_P9 * (p>>13) * (p>>13)) >> 25
         var2 = (dig_P8 * p) >> 19
         p = ((p + var1 + var2) >> 8) + (dig_P7<<4)
         return p/256000.
 
-def raw_to_calibrated_humidity(self, rawhumidity, rawtemp):
-    """
-    If rawtemp is negative, it's interpreted as -t_fine
-    """
-    t_fine = self._raw_to_t_fine(rawtemp)
+    def raw_to_calibrated_humidity(self, rawhumidity, rawtemp):
+        """
+        If rawtemp is negative, it's interpreted as -t_fine
+        """
+        t_fine = self._raw_to_t_fine(rawtemp)
 
-    adc_H = np.array(rawhumidity, dtype='int32')
-    dig_H1 = self.calib_vals['dig_H1'].astype('int64')
-    dig_H2 = self.calib_vals['dig_H2'].astype('int64')
-    dig_H3 = self.calib_vals['dig_H3'].astype('int64')
-    dig_H4 = self.calib_vals['dig_H4'].astype('int64')
-    dig_H5 = self.calib_vals['dig_H5'].astype('int64')
-    dig_H6 = self.calib_vals['dig_H6'].astype('int64')
-    
-    var = t_fine - 76800
-    var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + (16384)) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + (32768))) >> 10) + (2097152)) * (dig_H2) + 8192) >> 14))
-    var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
-    var[var<0] = 0
-    var[var>419430400] = 419430400
-    return (var>>12)/1024.
+        adc_H = np.array(rawhumidity, dtype='int32')
+        dig_H1 = self.calib_vals['dig_H1'].astype('int64')
+        dig_H2 = self.calib_vals['dig_H2'].astype('int64')
+        dig_H3 = self.calib_vals['dig_H3'].astype('int64')
+        dig_H4 = self.calib_vals['dig_H4'].astype('int64')
+        dig_H5 = self.calib_vals['dig_H5'].astype('int64')
+        dig_H6 = self.calib_vals['dig_H6'].astype('int64')
+        
+        var = t_fine - 76800
+        var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + (16384)) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + (32768))) >> 10) + (2097152)) * (dig_H2) + 8192) >> 14))
+        var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
+        var[var<0] = 0
+        var[var>419430400] = 419430400
+        return (var>>12)/1024.
 
     @property
     def mode(self):
