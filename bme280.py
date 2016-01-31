@@ -18,7 +18,7 @@ DATA_START = 0xF7
 BME280_ID = 0x60
 RESET_CODE = 0xB6
 
-CALIB_REGISTERS = { 'dig_T0': ('ushort', 0x88, 0x89),
+CALIB_REGISTERS = { 'dig_T1': ('ushort', 0x88, 0x89),
                     'dig_T2': ('short', 0x8a, 0x8b),
                     'dig_T3': ('short', 0x8c, 0x8d),
                     'dig_P1': ('ushort', 0x8e, 0x8f),
@@ -58,6 +58,8 @@ class BME280Recorder:
         self.iir_filter = 0
 
         self.mode = mode
+
+        self.calib_vals = self.get_calibs()
     
     def check_device_present(self):
         devid = self.read_register(ID_REGISTER)
@@ -94,7 +96,7 @@ class BME280Recorder:
                                           dtype='short')
             else:
                 regvals = [val << (8*i) for i, val in enumerate(regvals)]
-                calib_vals[nm] = np.sum(regvals, dtype=dt)
+                calib_vals[nm] = np.sum(regvals, dtype=dt).astype('int64')
         return calib_vals
 
     def read_register(self, regaddr):
@@ -117,7 +119,7 @@ class BME280Recorder:
 
         self.bus.write_byte_data(self.address, regaddr, new_regval)
 
-    def read_raw(self):
+    def _read_raw(self):
         """
         Reads the pressure, temperature, and humidity from their registers and 
         returns them as raw ADC integers.
@@ -139,14 +141,41 @@ class BME280Recorder:
 
         return pres_val, temp_val, hum_val
 
-    def read(self):
+    def read(self, raw=True):
+        """
+        Reads the current pressure, temperature, humidity values and returns
+        them.  If `raw` is True, it is the raw ADC value, otherwise it's the
+        calibrated value.
+        """
         if self._mode == 'forced':
             self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
             # wait for a ms, which should be plenty of time
             time.sleep(0.001)
 
-        return self.read_raw()
+        pres_raw, temp_raw, hum_raw = self._read_raw()
+        if raw:
+            return pres_raw, temp_raw, hum_raw
+        else:
+            pres = raw_to_calibrated_pressure(pres_raw)
+            temp = raw_to_calibrated_temp(temp_raw)
+            hum = raw_to_calibrated_humidity(hum_raw)
+            return pres, temp, hum
 
+    def raw_to_calibrated_temp(self, rawtemp):
+        dig_T1 = self.calib_vals['dig_T1']
+        dig_T2 = self.calib_vals['dig_T2']
+        dig_T3 = self.calib_vals['dig_T3']
+
+        # from the BME280 datasheet
+        var1 = (((rawtemp>>3) - (dig_T1<<1)) * dig_T2) >> 11
+        var2 = (((((rawtemp>>4) - dig_T1) * ((rawtemp>>4) - dig_T1)) >> 12) * dig_T3) >> 14
+        return ((var1 + var2) * 5 + 128) >> 8
+
+    def raw_to_calibrated_pressure(self, rawpressure):
+        raise NotImplemedError
+
+    def raw_to_calibrated_humidity(self, rawhumidity):
+        raise NotImplemedError
 
     @property
     def mode(self):
