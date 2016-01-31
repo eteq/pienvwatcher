@@ -19,20 +19,23 @@ BME280_ID = 0x60
 RESET_CODE = 0xB6
 
 CALIB_REGISTERS = { 'dig_T0': ('ushort', 0x88, 0x89),
-                    'dig_T2': (0x8a, 0x8b),
-                    'dig_T3': (0x8c, 0x8d),
+                    'dig_T2': ('short', 0x8a, 0x8b),
+                    'dig_T3': ('short', 0x8c, 0x8d),
                     'dig_P1': ('ushort', 0x8e, 0x8f),
-                    'dig_P2': (0x90, 0x91),
-                    'dig_P3': (0x92, 0x93),
-                    'dig_P4': (0x94, 0x95),
-                    'dig_P5': (0x96, 0x97),
-                    'dig_P6': (0x98, 0x99),
-                    'dig_P7': (0x9a, 0x9b),
-                    'dig_P8': (0x9c, 0x9d),
-                    'dig_P9': (0x9e, 0x9f),
+                    'dig_P2': ('short', 0x90, 0x91),
+                    'dig_P3': ('short', 0x92, 0x93),
+                    'dig_P4': ('short', 0x94, 0x95),
+                    'dig_P5': ('short', 0x96, 0x97),
+                    'dig_P6': ('short', 0x98, 0x99),
+                    'dig_P7': ('short', 0x9a, 0x9b),
+                    'dig_P8': ('short', 0x9c, 0x9d),
+                    'dig_P9': ('short', 0x9e, 0x9f),
                     'dig_H1': ('char', 0xa1),
-                    'dig_H2': (0xe1, 0xe2),
+                    'dig_H2': ('short', 0xe1, 0xe2),
                     'dig_H3': ('char', 0xe3),
+                    'dig_H4': ('12reversed', 0xe4, 0xe5),
+                    'dig_H5': ('12', 0xe5, 0xe6),
+                    'dig_H6': ('char', 0xe7),
                     }
 
 class BME280Recorder:
@@ -57,7 +60,7 @@ class BME280Recorder:
         self.mode = mode
     
     def check_device_present(self):
-        devid = self.bus.read_byte_data(self.address, ID_REGISTER)
+        devid = self.read_register(ID_REGISTER)
         if devid != BME280_ID:
             raise ValueError('Device is not a BME280 (id != 60).')
 
@@ -68,22 +71,27 @@ class BME280Recorder:
 
     def get_calibs(self):
         calib_vals = {}
-        for nm, regs in CALIB_REGISTERS.items():
-            if isinstance(regs[0], str):
-                dt = regs[0]
-                regs = regs[1:]
-            else:
-                dt = None
+        for nm, typeandregs in CALIB_REGISTERS.items():
+            dt = typeandregs[0]
+            regs = typeandregs[1:]
 
             regvals = []
             for i, reg in enumerate(regs):
-                    regvals.append(self.bus.read_byte_data(self.address, reg))
+                    regvals.append(self.read_register(reg))
 
             if dt == 'char':
                 s = ''
                 for val in regvals:
                     s += chr(val)
                 calib_vals[nm] = s
+            elif dt == '12':
+                #first reg is 0-3, second is 4-11
+                calib_vals[nm] = np.array(regvals[0] + regvals[1] << 4,
+                                          dtype='short')
+            elif dt == '12reversed':
+                #first reg is 4-11, second is 0-3
+                calib_vals[nm] = np.array(regvals[1] + regvals[0] << 4,
+                                          dtype='short')
             else:
                 regvals = [val << (8*i) for i, val in enumerate(regvals)]
                 calib_vals[nm] = np.sum(regvals, dtype=dt)
