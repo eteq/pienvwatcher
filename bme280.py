@@ -152,9 +152,9 @@ class BME280Recorder:
             return pres_raw, temp_raw, hum_raw
         else:
             t_fine_in = -self._raw_to_t_fine(temp_raw)
-            temp = raw_to_calibrated_temp(t_fine_in)
-            pres = raw_to_calibrated_pressure(pres_raw, t_fine_in)
-            hum = raw_to_calibrated_humidity(hum_raw, t_fine_in)
+            temp = self.raw_to_calibrated_temp(t_fine_in)
+            pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
+            hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
             return pres, temp, hum
 
     def _raw_to_t_fine(self, rawtemp):
