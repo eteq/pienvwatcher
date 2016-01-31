@@ -1,7 +1,9 @@
 import os
 import time
 
+import numpy as np
 import smbus
+
 
 
 # register addresses
@@ -15,6 +17,23 @@ DATA_START = 0xF7
 
 BME280_ID = 0x60
 RESET_CODE = 0xB6
+
+CALIB_REGISTERS = { 'dig_T0': ('ushort', 0x88, 0x89),
+                    'dig_T2': (0x8a, 0x8b),
+                    'dig_T3': (0x8c, 0x8d),
+                    'dig_P1': ('ushort', 0x8e, 0x8f),
+                    'dig_P2': (0x90, 0x91),
+                    'dig_P3': (0x92, 0x93),
+                    'dig_P4': (0x94, 0x95),
+                    'dig_P5': (0x96, 0x97),
+                    'dig_P6': (0x98, 0x99),
+                    'dig_P7': (0x9a, 0x9b),
+                    'dig_P8': (0x9c, 0x9d),
+                    'dig_P9': (0x9e, 0x9f),
+                    'dig_H1': ('char', 0xa1),
+                    'dig_H2': (0xe1, 0xe2),
+                    'dig_H3': ('char', 0xe3),
+                    }
 
 class BME280Recorder:
     def __init__(self, address=0x77, i2cbusnum=1, mode='forced'):
@@ -46,6 +65,22 @@ class BME280Recorder:
         self.bus.write_byte_data(self.address, RESET_REGISTER, RESET_CODE)
         time.sleep(0.5)  # make sure it finishes resetting
         self.check_device_present()
+
+    def get_calibs(self):
+        calib_vals = {}
+        for nm, regs in CALIB_REGISTERS.items():
+            if isinstance(regs[0], str):
+                dt = np.dtype(regs[0])
+                regs = regs[1:]
+            else:
+                dt = None
+
+            regvals = []
+            for i, reg in enumerate(regs):
+                val = self.bus.read_byte_data(self.address, reg)
+                regvals.append(val << (8*i))
+            calib_vals[nm] = np.sum(regvals, dtype=dt)
+        return calib_vals
 
     def read_register(self, regaddr):
         return self.bus.read_byte_data(self.address, regaddr)
