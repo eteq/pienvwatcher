@@ -207,7 +207,7 @@ class BME280Recorder:
         dig_P8 = self.calib_vals['dig_P8'].astype('int64')
         dig_P9 = self.calib_vals['dig_P9'].astype('int64')
 
-        var1 = t_fine – 128000
+        var1 = t_fine - 128000
         var2 = var1 * var1 * dig_P6
         var2 += ((var1*dig_P5)<<17)
         var2 += ((dig_P4)<<35)
@@ -225,20 +225,22 @@ def raw_to_calibrated_humidity(self, rawhumidity, rawtemp):
     """
     If rawtemp is negative, it's interpreted as -t_fine
     """
-t_fine = self._raw_to_t_fine(rawtemp)
-adc_H = np.array(rawhumidity, dtype='int32')
-dig_H1 = self.calib_vals['dig_H1'].astype('int64')
-dig_H2 = self.calib_vals['dig_H2'].astype('int64')
-dig_H3 = self.calib_vals['dig_H3'].astype('int64')
-dig_H4 = self.calib_vals['dig_H4'].astype('int64')
-dig_H5 = self.calib_vals['dig_H5'].astype('int64')
-dig_H6 = self.calib_vals['dig_H6'].astype('int64')
-var = t_fine - 76800
-var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + (16384)) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + (32768))) >> 10) + (2097152)) * (dig_H2) + 8192) >> 14))
-var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
-var[var<0] = 0
-var[var>419430400] = 419430400
-return (var>>12)/1024.
+    t_fine = self._raw_to_t_fine(rawtemp)
+
+    adc_H = np.array(rawhumidity, dtype='int32')
+    dig_H1 = self.calib_vals['dig_H1'].astype('int64')
+    dig_H2 = self.calib_vals['dig_H2'].astype('int64')
+    dig_H3 = self.calib_vals['dig_H3'].astype('int64')
+    dig_H4 = self.calib_vals['dig_H4'].astype('int64')
+    dig_H5 = self.calib_vals['dig_H5'].astype('int64')
+    dig_H6 = self.calib_vals['dig_H6'].astype('int64')
+    
+    var = t_fine - 76800
+    var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + (16384)) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + (32768))) >> 10) + (2097152)) * (dig_H2) + 8192) >> 14))
+    var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
+    var[var<0] = 0
+    var[var>419430400] = 419430400
+    return (var>>12)/1024.
 
     @property
     def mode(self):
