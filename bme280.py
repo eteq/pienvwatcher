@@ -375,21 +375,40 @@ class BME280Recorder:
         self.set_register(CONFIG_REGISTER, regval, 0, 3)
         self._iir_filter = val
 
-    def output_session(self, fn, waitsec=30):
-        if not os.path.exists(fn):
-            with open(fn, 'w') as f:
-                f.write('time,pressure,temperature,humidity')
-                f.write('\n')
+    def output_session(self, fn, waitsec=30, writecal=True, writeraw=True):
+
+        fnraw = fn + '_raw'
+        fncal = fn + '_cal'
+
+        if writeraw:
+            if not os.path.exists(fnraw):
+                with open(fnraw, 'w') as f:
+                    f.write('time,pressure,temperature,humidity')
+                    f.write('\n')
+        if writecal:
+            if not os.path.exists(fncal):
+                with open(fncal, 'w') as f:
+                    f.write('time,pressure,temperature,humidity')
+                    f.write('\n')
 
         while True:
             sttime = time.time()
-            svals = [str(val) for val in self.read()]
-
             timestr = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(sttime))
-            svals.insert(0, timestr)
 
-            with open(fn, 'a') as f:
-                f.write(','.join(svals) + '\n')
+            pres_raw, temp_raw, hum_raw = self.read()
+
+            if writeraw:
+                with open(fnraw, 'a') as f:
+                    f.write(','.join([timestr, str(pres_raw), str(temp_raw), str(hum_raw)]) + '\n')
+
+            if writecal:
+                t_fine_in = -self._raw_to_t_fine(temp_raw)
+                temp = self.raw_to_calibrated_temp(t_fine_in)
+                pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
+                hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
+                with open(fncal, 'a') as f:
+                    f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
+
 
             timeleft = sttime - time.time() + 30
             if timeleft > 0:
