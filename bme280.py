@@ -33,8 +33,8 @@ CALIB_REGISTERS = { 'dig_T1': ('ushort', 0x88, 0x89),
                     'dig_H1': ('uint8', 0xa1),
                     'dig_H2': ('short', 0xe1, 0xe2),
                     'dig_H3': ('uint8', 0xe3),
-                    'dig_H4': ('12reversed', 0xe4, 0xe5),
-                    'dig_H5': ('12', 0xe5, 0xe6),
+                    'dig_H4': ('12ml', 0xe4, 0xe5),
+                    'dig_H5': ('12lm', 0xe5, 0xe6),
                     'dig_H6': ('int8', 0xe7),
                     }
 
@@ -81,14 +81,14 @@ class BME280Recorder:
             for i, reg in enumerate(regs):
                     regvals.append(self.read_register(reg))
 
-            if dt == '12':
-                #first reg is 0-3, second is 4-11
-                calib_vals[nm] = np.array(regvals[0] + regvals[1] << 4,
-                                          dtype='short')
-            elif dt == '12reversed':
-                #first reg is 4-11, second is 0-3
-                calib_vals[nm] = np.array(regvals[1] + regvals[0] << 4,
-                                          dtype='short')
+            if dt == '12ml':
+                regval = regvals[0] << 4  # 11:4
+                regval += regvals[1] & 0b111  # 3:0 -> 3:0
+                calib_vals[nm] = np.array(regval, dtype='short')
+            elif dt == '12lm':
+                regval = regvals[0] & 0b11110000  # 7:4 -> 3:0
+                regval += regvals[1]  # 11:4
+                calib_vals[nm] = np.array(regval, dtype='short')
             else:
                 regvals = [val << (8*i) for i, val in enumerate(regvals)]
                 calib_vals[nm] = np.sum(regvals, dtype=dt)
@@ -233,8 +233,8 @@ class BME280Recorder:
         var = t_fine - 76800
         var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + 16384) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + 32768)) >> 10) + 2097152) * (dig_H2) + 8192) >> 14))
         var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
-        var[var<0] = 0
-        var[var>419430400] = 419430400
+        var.ravel()[var.ravel()<0] = 0
+        var.ravel()[var.ravel()>419430400] = 419430400
         return (var>>12)/1024.
 
     @property
