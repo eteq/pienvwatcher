@@ -70,16 +70,23 @@ class BME280Recorder:
         calib_vals = {}
         for nm, regs in CALIB_REGISTERS.items():
             if isinstance(regs[0], str):
-                dt = np.dtype(regs[0])
+                dt = regs[0]
                 regs = regs[1:]
             else:
                 dt = None
 
             regvals = []
             for i, reg in enumerate(regs):
-                val = self.bus.read_byte_data(self.address, reg)
-                regvals.append(val << (8*i))
-            calib_vals[nm] = np.sum(regvals, dtype=dt)
+                    regvals.append(self.bus.read_byte_data(self.address, reg))
+
+            if dt == 'char':
+                s = ''
+                for val in regvals:
+                    s += chr(val)
+                calib_vals[nm] = s
+            else:
+                regvals = [val << (8*i) for i, val in enumerate(regvals)]
+                calib_vals[nm] = np.sum(regvals, dtype=dt)
         return calib_vals
 
     def read_register(self, regaddr):
