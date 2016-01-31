@@ -30,12 +30,12 @@ CALIB_REGISTERS = { 'dig_T1': ('ushort', 0x88, 0x89),
                     'dig_P7': ('short', 0x9a, 0x9b),
                     'dig_P8': ('short', 0x9c, 0x9d),
                     'dig_P9': ('short', 0x9e, 0x9f),
-                    'dig_H1': ('char', 0xa1),
+                    'dig_H1': ('uint8', 0xa1),
                     'dig_H2': ('short', 0xe1, 0xe2),
-                    'dig_H3': ('char', 0xe3),
+                    'dig_H3': ('uint8', 0xe3),
                     'dig_H4': ('12reversed', 0xe4, 0xe5),
                     'dig_H5': ('12', 0xe5, 0xe6),
-                    'dig_H6': ('char', 0xe7),
+                    'dig_H6': ('int8', 0xe7),
                     }
 
 class BME280Recorder:
@@ -81,12 +81,7 @@ class BME280Recorder:
             for i, reg in enumerate(regs):
                     regvals.append(self.read_register(reg))
 
-            if dt == 'char':
-                s = ''
-                for val in regvals:
-                    s += chr(val)
-                calib_vals[nm] = s
-            elif dt == '12':
+            if dt == '12':
                 #first reg is 0-3, second is 4-11
                 calib_vals[nm] = np.array(regvals[0] + regvals[1] << 4,
                                           dtype='short')
@@ -228,15 +223,15 @@ class BME280Recorder:
         t_fine = self._raw_to_t_fine(rawtemp)
 
         adc_H = np.array(rawhumidity, dtype='int32')
-        dig_H1 = self.calib_vals['dig_H1'].astype('int64')
-        dig_H2 = self.calib_vals['dig_H2'].astype('int64')
-        dig_H3 = self.calib_vals['dig_H3'].astype('int64')
-        dig_H4 = self.calib_vals['dig_H4'].astype('int64')
-        dig_H5 = self.calib_vals['dig_H5'].astype('int64')
-        dig_H6 = self.calib_vals['dig_H6'].astype('int64')
+        dig_H1 = self.calib_vals['dig_H1'].astype('int32')
+        dig_H2 = self.calib_vals['dig_H2'].astype('int32')
+        dig_H3 = self.calib_vals['dig_H3'].astype('int32')
+        dig_H4 = self.calib_vals['dig_H4'].astype('int32')
+        dig_H5 = self.calib_vals['dig_H5'].astype('int32')
+        dig_H6 = self.calib_vals['dig_H6'].astype('int32')
         
         var = t_fine - 76800
-        var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + (16384)) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + (32768))) >> 10) + (2097152)) * (dig_H2) + 8192) >> 14))
+        var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + 16384) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + 32768)) >> 10) + 2097152) * (dig_H2) + 8192) >> 14))
         var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
         var[var<0] = 0
         var[var>419430400] = 419430400
