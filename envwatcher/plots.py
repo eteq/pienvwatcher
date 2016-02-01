@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 def read_dataset(fn):
     with open(fn) as f:
-        firstline = f.readline()
+        firstline = f.readline().strip()
     fields = firstline.split(',')
     dt = np.dtype([(fi, 'S19' if fi=='time' else float) for fi in fields])
     
@@ -30,12 +30,18 @@ def write_series_plots(dsetfn, outdir):
 
     plot_names = []
     for name in dset.dtype.names[1:]:
+        plt.figure()
+
         plt.plot_date(plotdates, dset[name], '-')
 
         plt.xlabel('Date')
         plt.ylabel(name)
-        plt.savefig(os.path.join(outdir, '{}_{}.png'.format(dset_name, name))
-        plot_names.append(name)
+
+        img_name = '{}_{}.png'.format(dset_name, name)
+        plt.savefig(os.path.join(outdir, img_name))
+        plt.close()
+        
+        plot_names.append((name, img_name))
 
     return plot_names
 

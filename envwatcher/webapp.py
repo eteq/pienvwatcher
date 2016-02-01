@@ -1,10 +1,10 @@
 import os
 
-from flask import Flask, render_template, error, send_file
+from flask import Flask, render_template, abort, send_file
 
 import matplotlib
 matplotlib.use('agg')  # non-interactive backend
-from .plots import make_series_plots
+from .plots import write_series_plots
 
 DATASETS_DIR = 'datasets'
 PLOTS_DIR = 'plots'
@@ -17,8 +17,9 @@ app.config.from_object(__name__)
 @app.route("/index")
 def index():
     series = []
-    if os.path.isdir(app.config['DATASETS_DIR']):
-        dsls = os.listdir(app.config['DATASETS_DIR'])
+    dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
+    if os.path.isdir(dsetdir):
+        dsls = os.listdir(dsetdir)
         for fn in dsls:
             if fn.endswith('_cal'):
                 series.append(fn[:-4])
@@ -28,14 +29,15 @@ def index():
 
 @app.route("/series/<series_name>")
 def series(series_name):
-    dsetfn = os.path.join(app.config['DATASETS_DIR'], series_name + '_cal')
-    plot_names = write_series_plots(dsetfn, app.config['PLOTS_DIR'])
-    plots = [dict(name=nm, path=series_name+'_'+path) for nm, path in plot_names]
+    dsetfn = os.path.join(app.root_path, app.config['DATASETS_DIR'], series_name + '_cal')
+    plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
+    plot_names = write_series_plots(dsetfn, plotsdir)
+    plots = [dict(name=nm, path='/plots/'+path) for nm, path in plot_names]
     return render_template('series.html', series_name=series_name, plots=plots)
 
-@app.route("/plots/<plotid>"):
+@app.route("/plots/<plotid>")
 def plots(plotid):
     if plotid.startswith('..') or plotid.startswith('/'):
-        error(404)
-    plotfn = os.path.join(app.config['PLOTS_DIR'], plotid + '_cal')
+        abort(404)
+    plotfn = os.path.join(app.root_path, app.config['PLOTS_DIR'], plotid)
     return send_file(plotfn)

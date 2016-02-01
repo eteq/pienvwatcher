@@ -1,1 +1,3 @@
 *.pyc
+envwatcher/datasets
+envwatcher/plots
