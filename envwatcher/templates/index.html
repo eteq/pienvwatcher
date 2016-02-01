@@ -1,11 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
-  <h1>{{ Pienvwatcher }}</h1>
+  <h1>Pienvwatcher</h1>
+
+  Select a series to view:
 
   <ul>
   
   {% for ser in series %}
-    <li><a href="{{ ser.url }}">{{ ser.name }}</a></li>
+    <li><a href="plots/{{ ser }}">{{ ser }}</a></li>
+  {% else %}
+    No series' Found!
   {% endfor %}
   </ul>
 

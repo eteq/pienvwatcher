@@ -1,5 +1,43 @@
+import os
+from datetime import datetime
+
+import numpy as np
 from matplotlib import pyplot as plt
 
+
+def read_dataset(fn):
+    with open(fn) as f:
+        firstline = f.readline()
+    fields = firstline.split(',')
+    dt = np.dtype([(fi, 'S19' if fi=='time' else float) for fi in fields])
+    
+    return np.loadtxt(fn, dt, skiprows=1, delimiter=',')
+
+
+def write_series_plots(dsetfn, outdir):
+    from matplotlib.dates import date2num
+
+    dset_name = os.path.split(dsetfn)[-1]
+
+    if dset_name.endswith('_cal'):
+        dset_name = dset_name[:-4]
+    else:
+        raise ValueError('dsets have to end in _cal')
+
+    dset = read_dataset(dsetfn)
+    dts = [datetime.strptime(t.decode(), '%Y-%m-%d_%H:%M:%S') for t in dset['time']]
+    plotdates = date2num(dts)
+
+    plot_names = []
+    for name in dset.dtype.names[1:]:
+        plt.plot_date(plotdates, dset[name], '-')
+
+        plt.xlabel('Date')
+        plt.ylabel(name)
+        plt.savefig(os.path.join(outdir, '{}_{}.png'.format(dset_name, name))
+        plot_names.append(name)
+
+    return plot_names
 
 def triple_plots(fntab):
     from astropy.table import Table
