@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 {% block subtitle %}: {{ series_name }}{% endblock %}
 {% block body %}
-  <h1>{{ series_name }}</h1>
+  <h1>{{ series_name | capitalize }}</h1>
 
   {% for plot in plots %}
     <div class="plot">
-      <h2>{{ plot.name }}</h2>
+      <h2>{{ plot.name | capitalize}}</h2>
       <img src="{{ plot.path }}">
     </div>
   {% endfor %}

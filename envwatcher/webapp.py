@@ -13,6 +13,15 @@ app = Flask(__name__.split('.')[0])
 app.config.from_object(__name__)
 
 
+@app.before_first_request
+def before_first():
+    dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
+    plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
+    if not os.path.exists(dsetdir):
+        os.mkdir(dsetdir)
+    if not os.path.exists(plotsdir):
+        os.mkdir(plotsdir)
+
 @app.route("/")
 @app.route("/index")
 def index():

@@ -3,19 +3,12 @@ from datetime import datetime
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.dates import date2num, num2date, DateFormatter
 
-
-def read_dataset(fn):
-    with open(fn) as f:
-        firstline = f.readline().strip()
-    fields = firstline.split(',')
-    dt = np.dtype([(fi, 'S19' if fi=='time' else float) for fi in fields])
-    
-    return np.loadtxt(fn, dt, skiprows=1, delimiter=',')
+from .utils import read_dataset, temphum_to_dewpoint
 
 
 def write_series_plots(dsetfn, outdir):
-    from matplotlib.dates import date2num
 
     dset_name = os.path.split(dsetfn)[-1]
 
@@ -25,17 +18,41 @@ def write_series_plots(dsetfn, outdir):
         raise ValueError('dsets have to end in _cal')
 
     dset = read_dataset(dsetfn)
-    dts = [datetime.strptime(t.decode(), '%Y-%m-%d_%H:%M:%S') for t in dset['time']]
+    dts = [datetime.strptime(t.decode(), '%Y-%m-%d_%H:%M:%S') for i, t in enumerate(dset['time'])]
     plotdates = date2num(dts)
 
+    firstdatestr = num2date(plotdates[0]).strftime('%Y-%m-%d')
+    lastdatestr = num2date(plotdates[-1]).strftime('%Y-%m-%d')
+    if firstdatestr == lastdatestr:
+        titlestr = firstdatestr
+    else:
+        titlestr = firstdatestr + ' to ' + lastdatestr
+
+    data_to_plot = {nm: dset[nm] for nm in dset.dtype.names[1:]}
+
+    if 'dewpoint' not in data_to_plot and ('temperature' in data_to_plot and 
+                                           'humidity' in data_to_plot):
+        data_to_plot['dewpoint'] = temphum_to_dewpoint(data_to_plot['temperature'], data_to_plot['humidity'])
+
     plot_names = []
-    for name in dset.dtype.names[1:]:
+    for name, data in data_to_plot.items():
         plt.figure()
 
-        plt.plot_date(plotdates, dset[name], '-')
+        plt.plot_date(plotdates, data, '-')
 
         plt.xlabel('Date')
-        plt.ylabel(name)
+        if name == 'pressure':
+            plt.ylabel('kPa')
+        elif name == 'temperature' or name == 'dewpoint':
+            plt.ylabel('deg C')
+        elif name == 'humidity':
+            plt.ylabel('RH %')
+        else:
+            plt.ylabel(name)
+
+        plt.gca().xaxis.set_major_formatter(DateFormatter('%H:%M'))
+        plt.gcf().autofmt_xdate()
+        plt.title(titlestr)
 
         img_name = '{}_{}.png'.format(dset_name, name)
         plt.savefig(os.path.join(outdir, img_name))

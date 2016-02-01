@@ -50,9 +50,9 @@ class BME280Recorder:
         # initial mode is sleep after reset
         self._mode = 'sleep'
 
-        self.humidity_oversampling = 4
+        self.humidity_oversampling = 8
         self.pressure_oversampling = 16
-        self.temperature_oversampling = 1
+        self.temperature_oversampling = 2
 
         self.t_standby_ms = 250
         self.iir_filter = 0
