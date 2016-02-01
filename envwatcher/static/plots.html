@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block subtitle %}: {{ series_name }} Plots{% endblock %}
+{% block body %}
+  <h1>{{ series_name }}</h1>
+
+  {% for plot in plots %}
+    <div class="plot">
+      <h2>{{ plot.plot_type }}</h2>
+      <img src="{{ plot.plot_url }}">
+    </div>
+  {% endfor %}
+
+{% endblock %}
