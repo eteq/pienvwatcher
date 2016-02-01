@@ -40,7 +40,7 @@ def write_series_plots(dsetfn, outdir):
 
         plt.plot_date(plotdates, data, '-')
 
-        plt.xlabel('Date')
+        plt.xlabel('Time')
         if name == 'pressure':
             plt.ylabel('kPa')
         elif name == 'temperature' or name == 'dewpoint':
