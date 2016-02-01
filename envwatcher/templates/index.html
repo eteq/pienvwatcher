@@ -2,15 +2,37 @@
 {% block body %}
   <h1>Pienvwatcher</h1>
 
-  Select a series to view:
+  <div class="series">
+    <h2>Existing time series</h2>
+    Select a series to view:
 
-  <ul>
-  
-  {% for ser in series %}
-    <li><a href="series/{{ ser }}">{{ ser }}</a></li>
-  {% else %}
-    No series' Found!
-  {% endfor %}
-  </ul>
+    <ul>
+    
+    {% for ser in series %}
+      <li><a href="series/{{ ser }}">{{ ser }}</a></li>
+    {% else %}
+      No series' Found!
+    {% endfor %}
+    </ul>
+  </div>
+
+
+  <div class="recorder">
+    <h2>Recorder</h2>
+
+    Recorder status: 
+    {% if recorder_present %}
+      <span class="good"> Running </span>
+      <form action="recorder" method="del">
+         <button type="button">Stop</button> 
+      </form>
+    {% else %}
+      <span class="bad"> Stopped </span>
+      <form action="recorder" method="post">
+         Series: <input type="text" name="series">
+         <button type="button">Start</button> 
+      </form>
+    {% endif %}
+  </div>
 
 {% endblock %}
