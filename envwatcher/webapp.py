@@ -1,4 +1,5 @@
 import os
+import time
 
 from flask import Flask, render_template, abort, send_file
 
@@ -42,7 +43,8 @@ def series(series_name):
     dsetfn = os.path.join(app.root_path, app.config['DATASETS_DIR'], series_name + '_cal')
     plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
     plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
-    plots = [dict(name=nm, path='/plots/'+path) for nm, path in plot_names]
+    plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time())) 
+             for nm, path in plot_names]
     return render_template('series.html', series_name=series_name, plots=plots)
 
 @app.route("/plots/<plotid>")
