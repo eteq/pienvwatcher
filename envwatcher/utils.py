@@ -9,6 +9,7 @@ def read_dataset(fn):
     
     return np.loadtxt(fn, dt, skiprows=1, delimiter=',')
 
+
 def temphum_to_dewpoint(temp, rh):
     """
     Uses the Sonntag90 constants
@@ -20,3 +21,12 @@ def temphum_to_dewpoint(temp, rh):
     # this is the Magnus fomula
     gamma = np.log(rh/100.) + b*temp/(c + temp)
     return c* gamma/(b - gamma)
+
+
+def deg_f_to_c(degf):
+    return (degf - 32) / 1.8
+
+
+def deg_c_to_f(degc):
+    return degc*1.8 + 32
+    

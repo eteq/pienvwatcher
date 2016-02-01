@@ -5,10 +5,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.dates import date2num, num2date, DateFormatter
 
-from .utils import read_dataset, temphum_to_dewpoint
+from .utils import read_dataset, temphum_to_dewpoint, deg_c_to_f
 
 
-def write_series_plots(dsetfn, outdir):
+def write_series_plots(dsetfn, outdir, ctof=False):
 
     dset_name = os.path.split(dsetfn)[-1]
 
@@ -38,13 +38,19 @@ def write_series_plots(dsetfn, outdir):
     for name, data in data_to_plot.items():
         plt.figure()
 
+        if ctof and (name=='temperature' or name=='dewpoint'):
+            data = deg_c_to_f(data)
+
         plt.plot_date(plotdates, data, '-')
 
         plt.xlabel('Time')
         if name == 'pressure':
             plt.ylabel('kPa')
         elif name == 'temperature' or name == 'dewpoint':
-            plt.ylabel('deg C')
+            if ctof:
+                plt.ylabel('deg F')
+            else:
+                plt.ylabel('deg C')
         elif name == 'humidity':
             plt.ylabel('RH %')
         else:
