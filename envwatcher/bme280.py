@@ -401,40 +401,41 @@ class BME280Recorder:
         else:
             stopfn = ''
 
-        while True:
+        try:
+            while True:
+                if os.path.exists(stopfn):
+                    break
+
+                sttime = time.time()
+                timestr = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(sttime))
+
+                pres_raw, temp_raw, hum_raw = self.read()
+
+                if writeraw:
+                    with open(fnraw, 'a') as f:
+                        f.write(','.join([timestr, str(pres_raw), str(temp_raw), str(hum_raw)]) + '\n')
+
+                if writecal:
+                    t_fine_in = -self._raw_to_t_fine(temp_raw)
+                    temp = self.raw_to_calibrated_temp(t_fine_in)
+                    pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
+                    hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
+                    with open(fncal, 'a') as f:
+                        f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
+
+                if progressfn:
+                    proc_time = sttime - time.time()
+                    with open(progressfn, 'w') as fw:
+                        fw.write('Expires-on:')
+                        fw.write(str(time.time() + (proc_time + waitsec)*2))
+
+                timeleft = sttime - time.time() + waitsec
+                if timeleft > 0:
+                    time.sleep(timeleft)
+        finally:
+            # remove the stop and progress files
             if os.path.exists(stopfn):
-                break
-
-            sttime = time.time()
-            timestr = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(sttime))
-
-            pres_raw, temp_raw, hum_raw = self.read()
-
-            if writeraw:
-                with open(fnraw, 'a') as f:
-                    f.write(','.join([timestr, str(pres_raw), str(temp_raw), str(hum_raw)]) + '\n')
-
-            if writecal:
-                t_fine_in = -self._raw_to_t_fine(temp_raw)
-                temp = self.raw_to_calibrated_temp(t_fine_in)
-                pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
-                hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
-                with open(fncal, 'a') as f:
-                    f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
-
-            if progressfn:
-                proc_time = sttime - time.time()
-                with open(progressfn, 'w') as fw:
-                    fw.write('Expires-on:')
-                    fw.write(str(time.time() + (proc_time + waitsec)*2))
-
-            timeleft = sttime - time.time() + waitsec
-            if timeleft > 0:
-                time.sleep(timeleft)
-
-        # remove the stop and progress files
-        if os.path.exists(stopfn):
-            os.unlink(stopfn)
-        if os.path.exists(progressfn):
-            os.unlnk(progressfn)
+                os.unlink(stopfn)
+            if os.path.exists(progressfn):
+                os.unlnk(progressfn)
             
