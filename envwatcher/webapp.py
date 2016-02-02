@@ -102,7 +102,8 @@ def start_recorder():
 @app.route("/stop_recorder", methods=['POST'])
 def stop_recorder():
     dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
-    stopfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
+    stopfn = os.path.join(dsetdir, app.config['PROGRESS_NAME']) + '_stop'
+    print('Writing to', stopfn)
     with open(stopfn, 'w') as f:
         f.write('Stop recording!')
 
