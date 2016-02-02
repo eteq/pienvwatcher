@@ -428,6 +428,20 @@ class BME280Recorder:
                     with open(progressfn, 'w') as fw:
                         fw.write('Expires-on:')
                         fw.write(str(time.time() + (proc_time + waitsec)*2))
+                        fw.write('\n')
+
+                        fw.write('PID: ')
+                        fw.write(str(os.getpid()))
+                        fw.write('\n')
+
+                        fw.write('Output(s): ')
+                        if writecal:
+                            fw.write(fncal)
+                        if writeraw:
+                            if writecal:
+                                fw.write(', ')
+                            fw.write(fnraw)
+                        fw.write('\n')
 
                 timeleft = sttime - time.time() + waitsec
                 if timeleft > 0:
