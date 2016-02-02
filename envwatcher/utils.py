@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 
@@ -30,3 +32,18 @@ def deg_f_to_c(degf):
 def deg_c_to_f(degc):
     return degc*1.8 + 32
     
+
+def check_for_recorder(recorder_fn):
+    # Should probably do some locking here just in case?  Or maybe it's atomic-enough?
+    if os.path.isfile(recorder_fn):
+        with open(recorder_fn, 'r') as f:
+            rec = f.read()
+
+        key = 'Expires-on:'
+        for l in rec.split('\n'):
+            if l.startswith(key):
+                expire_time = float(l[len(key):].strip())
+                if expire_time > time.time():
+                    return True
+                break
+    return False

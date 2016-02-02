@@ -4,6 +4,7 @@ import time
 import numpy as np
 import smbus
 
+from .utils import check_for_recorder
 
 
 # register addresses
@@ -375,8 +376,8 @@ class BME280Recorder:
         self.set_register(CONFIG_REGISTER, regval, 0, 3)
         self._iir_filter = val
 
-    def output_session_file(self, fn, waitsec=30, writecal=True, writeraw=True):
-
+    def output_session_file(self, fn, waitsec=30, writecal=True, writeraw=True, 
+                                  progressfn=None):
         fnraw = fn + '_raw'
         fncal = fn + '_cal'
 
@@ -391,7 +392,19 @@ class BME280Recorder:
                     f.write('time,pressure,temperature,humidity')
                     f.write('\n')
 
+        if progressfn:
+            if check_for_recorder(progressfn):
+                raise IOError('Progress file for recorder "{}" present.  Cannot'
+                              ' start new recorder until it is '
+                              'cleared.'.format(progressfn))
+            stopfn = progressfn + '_stop'
+        else:
+            stopfn = ''
+
         while True:
+            if os.path.exists(stopfn):
+                break
+
             sttime = time.time()
             timestr = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(sttime))
 
@@ -409,7 +422,19 @@ class BME280Recorder:
                 with open(fncal, 'a') as f:
                     f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
 
+            if progressfn:
+                proc_time = sttime - time.time()
+                with open(progressfn, 'w') as fw:
+                    fw.write('Expires-on:')
+                    fw.write(str(time.time() + (proc_time + waitsec)*2))
 
-            timeleft = sttime - time.time() + 30
+            timeleft = sttime - time.time() + waitsec
             if timeleft > 0:
                 time.sleep(timeleft)
+
+        # remove the stop and progress files
+        if os.path.exists(stopfn):
+            os.unlink(stopfn)
+        if os.path.exists(progressfn):
+            os.unlnk(progressfn)
+            

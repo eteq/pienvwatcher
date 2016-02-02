@@ -1,14 +1,19 @@
 import os
 import time
+import multiprocessing
 
 from flask import Flask, render_template, abort, send_file
+
 
 import matplotlib
 matplotlib.use('agg')  # non-interactive backend
 from .plots import write_series_plots
 
+from .utils import check_for_recorder
+
 DATASETS_DIR = 'datasets'
 PLOTS_DIR = 'plots'
+PROGRESS_NAME = ''recorder_progress
 DEG_F = False
 
 app = Flask(__name__.split('.')[0])
@@ -30,7 +35,7 @@ def before_first():
 def index():
     series = []
     dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
-    recorder_fn = os.path.join(dsetdir, 'recorder_running')
+    recorder_fn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
 
     recorder_present = check_for_recorder(recorder_fn)
 
@@ -41,21 +46,6 @@ def index():
                 series.append(fn[:-4])
 
     return render_template('index.html', series=series, recorder_present=recorder_present)
-
-def check_for_recorder(recorder_fn):
-    # Should probably do some locking here just in case?  Or maybe it's atomic-enough?
-    if os.path.isfile(recorder_fn):
-        with open(recorder_fn, 'r') as f:
-            rec = f.read()
-
-        key = 'Expires-on:'
-        for l in rec.split('\n'):
-            if l.startswith(key):
-                expire_time = float(l[len(key):].strip())
-                if expire_time > time.time():
-                    return True
-                break
-    return False
 
 
 @app.route("/series/<series_name>")
@@ -74,3 +64,38 @@ def plots(plotid):
         abort(404)
     plotfn = os.path.join(app.root_path, app.config['PLOTS_DIR'], plotid)
     return send_file(plotfn)
+
+
+@app.route("/recorder", methods=['POST'])
+def start_recorder():
+    progressfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
+    if check_for_recorder(progressfn):
+        raise IOError('Progress file for recorder "{}" present.  Cannot start '
+                      'new recorder until it is cleared.'.format(progressfn))
+
+    series_name = request.form['series']
+    waittime = int(request.form['sampletime'])
+
+    recfn = os.path.abspath(os.path.join(dsetdir, series_name))
+
+    ctx = multiprocessing.get_context('spawn')
+    p = ctx.Process(target=spawn_recorder, args=(recfn, waittime, progressfn))
+    p.start()
+
+    time.sleep(1)  # make sure the process has time to actually start up
+    return 'Recorder started!'
+
+def spawn_recorder(recfn, waittime, progressfn):
+    from .bme280 import BME280Recorder
+
+    b = BME280Recorder()
+    b.output_session_file(recfn, waittime, progressfn=progressfn)
+
+
+@app.route("/recorder", methods=['DELETE'])
+def stop_recorder():
+    stopfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
+    with open(stopfn, 'w') as f:
+        f.write('Stop recording!')
+
+    return 'Recorder will be stopped, although it may take roughly the wait time.'
