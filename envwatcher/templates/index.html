@@ -23,15 +23,15 @@
     Recorder status: 
     {% if recorder_present %}
       <span class="good"> Running </span>
-      <form action="recorder" method="del">
-         <button type="button">Stop</button> 
+      <form action="stop_recorder" method="post">
+         <input type="submit" value="Stop"> 
       </form>
     {% else %}
       <span class="bad"> Stopped </span>
-      <form action="recorder" method="post">
+      <form action="start_recorder" method="post">
          Series: <input type="text" name="series">
-         Sample time: <input type="text" name="sampletime">
-         <button type="button">Start</button> 
+         Sample time: <input type="text" name="sampletime" value="30" size="5">
+         <input type="submit" value="Start"> 
       </form>
     {% endif %}
   </div>

@@ -1,8 +1,10 @@
 import os
+import sys
 import time
-import multiprocessing
+import subprocess
+from textwrap import dedent
 
-from flask import Flask, render_template, abort, send_file
+from flask import Flask, render_template, abort, send_file, request
 
 
 import matplotlib
@@ -13,7 +15,7 @@ from .utils import check_for_recorder
 
 DATASETS_DIR = 'datasets'
 PLOTS_DIR = 'plots'
-PROGRESS_NAME = ''recorder_progress
+PROGRESS_NAME = 'recorder_progress'
 DEG_F = False
 
 app = Flask(__name__.split('.')[0])
@@ -66,8 +68,10 @@ def plots(plotid):
     return send_file(plotfn)
 
 
-@app.route("/recorder", methods=['POST'])
+@app.route("/start_recorder", methods=['POST'])
 def start_recorder():
+    dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
+
     progressfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
     if check_for_recorder(progressfn):
         raise IOError('Progress file for recorder "{}" present.  Cannot start '
@@ -78,21 +82,24 @@ def start_recorder():
 
     recfn = os.path.abspath(os.path.join(dsetdir, series_name))
 
-    ctx = multiprocessing.get_context('spawn')
-    p = ctx.Process(target=spawn_recorder, args=(recfn, waittime, progressfn))
-    p.start()
-
-    time.sleep(1)  # make sure the process has time to actually start up
-    return 'Recorder started!'
-
-def spawn_recorder(recfn, waittime, progressfn):
-    from .bme280 import BME280Recorder
-
+    code = dedent("""
+    from envwatcher.bme280 import BME280Recorder
     b = BME280Recorder()
-    b.output_session_file(recfn, waittime, progressfn=progressfn)
+    b.output_session_file('{recfn}', {waittime}, progressfn='{progressfn}')
+    """).format(**locals()).strip()
+
+    p = subprocess.Popen([sys.executable, '-c', ';'.join(code.split('\n'))],
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    time.sleep(3)  # make sure the process has time to actually start up but also die if it needs to
+    if p.poll() is None:
+        return 'Recorder started!'
+    else:
+        stdouterr = p.communicate()[0]
+        return 'Starting recorder failed with: <br><pre>' + stdouterr.decode() + '</pre>'
 
 
-@app.route("/recorder", methods=['DELETE'])
+@app.route("/stop_recorder", methods=['POST'])
 def stop_recorder():
     stopfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
     with open(stopfn, 'w') as f:
