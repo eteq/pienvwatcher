@@ -86,7 +86,7 @@ def start_recorder():
     import time
     from envwatcher.bme280 import BME280Recorder
     b = BME280Recorder()
-    time.sleep(1)  # make sure everything starts up on the chip OK
+    b.read()
     b.output_session_file('{recfn}', {waittime}, progressfn='{progressfn}')
     """).format(**locals()).strip()
 

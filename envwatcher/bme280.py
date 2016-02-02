@@ -402,6 +402,7 @@ class BME280Recorder:
             stopfn = ''
 
         try:
+            time.sleep(waitsec)
             while True:
                 if os.path.exists(stopfn):
                     break
