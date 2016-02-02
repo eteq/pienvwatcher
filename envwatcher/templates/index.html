@@ -22,7 +22,8 @@
 
     Recorder status: 
     {% if recorder_present %}
-      <span class="good"> Running </span>
+      <span class="good"> Running </span> series "{{ recorder_info.series_name }}".
+
       <form action="stop_recorder" method="post">
          <input type="submit" value="Stop"> 
       </form>

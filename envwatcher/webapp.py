@@ -39,7 +39,13 @@ def index():
     dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
     recorder_fn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
 
-    recorder_present = check_for_recorder(recorder_fn)
+    recorder_info = {}
+    recorder_present = check_for_recorder(recorder_fn, recorder_info)
+    if 'Output(s)' in recorder_info:
+        for entry in recorder_info['Output(s)'].split(','):
+            if entry.endswith('_cal'):
+                recorder_info['series_name'] = os.path.split(entry)[-1][:-4]
+
 
     if os.path.isdir(dsetdir):
         dsls = os.listdir(dsetdir)
@@ -47,7 +53,10 @@ def index():
             if fn.endswith('_cal'):
                 series.append(fn[:-4])
 
-    return render_template('index.html', series=series, recorder_present=recorder_present)
+    return render_template('index.html',
+                           series=series,
+                           recorder_present=recorder_present,
+                           recorder_info=recorder_info)
 
 
 @app.route("/series/<series_name>")
@@ -55,7 +64,7 @@ def series(series_name):
     dsetfn = os.path.join(app.root_path, app.config['DATASETS_DIR'], series_name + '_cal')
     plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
     plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
-    plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time())) 
+    plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time()))
              for nm, path in plot_names]
     return render_template('series.html', series_name=series_name, plots=plots)
 

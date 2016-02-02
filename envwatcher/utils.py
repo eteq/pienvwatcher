@@ -34,17 +34,29 @@ def deg_c_to_f(degc):
     return degc*1.8 + 32
     
 
-def check_for_recorder(recorder_fn):
+def check_for_recorder(recorder_fn, infodct=None):
     # Should probably do some locking here just in case?  Or maybe it's atomic-enough?
+    if infodct is None:
+        infodct = {}
     if os.path.isfile(recorder_fn):
         with open(recorder_fn, 'r') as f:
             rec = f.read()
 
-        key = 'Expires-on:'
         for l in rec.split('\n'):
-            if l.startswith(key):
-                expire_time = float(l[len(key):].strip())
-                if expire_time > time.time():
-                    return True
-                break
+            res = l.strip().split(':')
+            if len(res) == 1:
+                continue
+            elif len(res) == 2:
+                infodct[res[0]] = res[1].strip()
+            else:
+                raise ValueError('Invalid line encountered in recorder file '
+                                 '"{}"!: "{}"'.format(recorder_fn, l))
+
+        if 'Expires-on' in infodct:
+            expire_time = float(infodct['Expires-on'])
+            if expire_time > time.time():
+                return True
+        else:
+            raise ValueError('Expires-on entry not found in recorder file '
+                             '"{}"'.format(recorder_fn))
     return False
