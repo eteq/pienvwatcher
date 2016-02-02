@@ -437,5 +437,5 @@ class BME280Recorder:
             if os.path.exists(stopfn):
                 os.unlink(stopfn)
             if os.path.exists(progressfn):
-                os.unlnk(progressfn)
+                os.unlink(progressfn)
             
