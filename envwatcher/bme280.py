@@ -378,6 +378,11 @@ class BME280Recorder:
 
     def output_session_file(self, fn, waitsec=30, writecal=True, writeraw=True,
                                   progressfn=None, writeplots=False):
+        if writeplots:
+            import matplotlib
+            matplotlib.use('agg')
+            from .plots import write_series_plots
+
         fnraw = fn + '_raw'
         fncal = fn + '_cal'
 
