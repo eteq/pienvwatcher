@@ -30,13 +30,15 @@ def write_series_plots(dsetfn, outdir, ctof=False):
 
     data_to_plot = {nm: dset[nm] for nm in dset.dtype.names[1:]}
 
-    if 'dewpoint' not in data_to_plot and ('temperature' in data_to_plot and 
+    if 'dewpoint' not in data_to_plot and ('temperature' in data_to_plot and
                                            'humidity' in data_to_plot):
         data_to_plot['dewpoint'] = temphum_to_dewpoint(data_to_plot['temperature'], data_to_plot['humidity'])
 
     plot_names = []
+
+    figs = {}
     for name, data in data_to_plot.items():
-        plt.figure()
+        fig = plt.figure()
 
         if ctof and (name=='temperature' or name=='dewpoint'):
             data = deg_c_to_f(data)
@@ -61,10 +63,13 @@ def write_series_plots(dsetfn, outdir, ctof=False):
         plt.title(titlestr)
 
         img_name = '{}_{}.png'.format(dset_name, name)
-        plt.savefig(os.path.join(outdir, img_name))
-        plt.close()
-        
+        figs[os.path.join(outdir, img_name)] = fig
+
         plot_names.append((name, img_name))
+    for path, fig in figs.items():
+        fig.savefig(path)
+
+    plt.close('all')
 
     return plot_names
 
