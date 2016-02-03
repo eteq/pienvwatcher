@@ -17,6 +17,7 @@ DATASETS_DIR = 'datasets'
 PLOTS_DIR = 'plots'
 PROGRESS_NAME = 'recorder_progress'
 DEG_F = False
+MAKE_PLOTS_AT_SERIES_REQUEST = False
 
 app = Flask(__name__.split('.')[0])
 app.config.from_object(__name__)
@@ -61,9 +62,17 @@ def index():
 
 @app.route("/series/<series_name>")
 def series(series_name):
-    dsetfn = os.path.join(app.root_path, app.config['DATASETS_DIR'], series_name + '_cal')
-    plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
-    plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
+    dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
+    if app.config['MAKE_PLOTS_AT_SERIES_REQUEST']:
+        dsetfn = os.path.join(dsetdir, series_name + '_cal')
+        plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
+        plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
+    else:
+        progressfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
+        infodct = {}
+        check_for_recorder(progressfn, infodct)
+        plot_names = infodct['Plot names']
+
     plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time()))
              for nm, path in plot_names]
     return render_template('series.html', series_name=series_name, plots=plots)
@@ -91,12 +100,18 @@ def start_recorder():
 
     recfn = os.path.abspath(os.path.join(dsetdir, series_name))
 
+    if app.config['MAKE_PLOTS_AT_SERIES_REQUEST']:
+        plotsparam = ''
+    else:
+        plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
+        plotsparam = ', writeplots=({}, {})'.format(plotsdir, app.config['DEG_F'])
+
     code = dedent("""
     import time
     from envwatcher.bme280 import BME280Recorder
     b = BME280Recorder()
     b.read()
-    b.output_session_file('{recfn}', {waittime}, progressfn='{progressfn}')
+    b.output_session_file('{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
     """).format(**locals()).strip()
 
     p = subprocess.Popen([sys.executable, '-c', ';'.join(code.split('\n'))],

@@ -61,7 +61,7 @@ class BME280Recorder:
         self.mode = mode
 
         self.calib_vals = self.get_calibs()
-    
+
     def check_device_present(self):
         devid = self.read_register(ID_REGISTER)
         if devid != BME280_ID:
@@ -117,7 +117,7 @@ class BME280Recorder:
 
     def _read_raw(self):
         """
-        Reads the pressure, temperature, and humidity from their registers and 
+        Reads the pressure, temperature, and humidity from their registers and
         returns them as raw ADC integers.
 
         Note that this does *not* force a read in forced mode - use `read` for
@@ -133,7 +133,7 @@ class BME280Recorder:
         temp_val +=  data_regs[4] << 4
         temp_val +=  data_regs[3] << 12
 
-        hum_val = data_regs[7] + (data_regs[6] << 8) 
+        hum_val = data_regs[7] + (data_regs[6] << 8)
 
         return pres_val, temp_val, hum_val
 
@@ -230,7 +230,7 @@ class BME280Recorder:
         dig_H4 = self.calib_vals['dig_H4'].astype('int32')
         dig_H5 = self.calib_vals['dig_H5'].astype('int32')
         dig_H6 = self.calib_vals['dig_H6'].astype('int32')
-        
+
         var = t_fine - 76800
         var = ((((adc_H << 14) - (dig_H4 << 20) - (dig_H5 * var)) + 16384) >> 15) * (((((((var * dig_H6) >> 10) * (((var *(dig_H3) >> 11) + 32768)) >> 10) + 2097152) * (dig_H2) + 8192) >> 14))
         var -= (((((var >> 15) * (var >> 15)) >> 7) * dig_H1) >> 4)
@@ -310,7 +310,7 @@ class BME280Recorder:
         regval = self._oversampling_val_to_regval(val)
         self.set_register(CTRL_HUM_REGISTER, regval, 0, 3)
 
-        # Datasheet 5.4.5 says you need to write to the ctrl_meas to get the 
+        # Datasheet 5.4.5 says you need to write to the ctrl_meas to get the
         # humidity settings to change
         measval = self.read_register(CTRL_MEAS_REGISTER)
         self.set_register(CTRL_MEAS_REGISTER, measval)
@@ -376,8 +376,8 @@ class BME280Recorder:
         self.set_register(CONFIG_REGISTER, regval, 0, 3)
         self._iir_filter = val
 
-    def output_session_file(self, fn, waitsec=30, writecal=True, writeraw=True, 
-                                  progressfn=None):
+    def output_session_file(self, fn, waitsec=30, writecal=True, writeraw=True,
+                                  progressfn=None, writeplots=False):
         fnraw = fn + '_raw'
         fncal = fn + '_cal'
 
@@ -424,6 +424,16 @@ class BME280Recorder:
                     with open(fncal, 'a') as f:
                         f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
 
+                if writeplots:
+                    if isinstance(writeplots, str):
+                        plotsdir = writeplots
+                        degf = False
+                    else:
+                        plotsdir, degf = writeplots
+                    plot_names = write_series_plots(fncal, plotsdir, degf)
+                else:
+                    plot_names = None
+
                 if progressfn:
                     proc_time = sttime - time.time()
                     with open(progressfn, 'w') as fw:
@@ -444,6 +454,14 @@ class BME280Recorder:
                             fw.write(fnraw)
                         fw.write('\n')
 
+                        if plot_names is not None:
+                            fw.write('Plot names: ')
+                            for i, name in enumerate(plot_names):
+                                if i!=0:
+                                    fw.write(', ')
+                                fw.write(name)
+                            fw.write('\n')
+
                 timeleft = sttime - time.time() + waitsec
                 if timeleft > 0:
                     time.sleep(timeleft)
@@ -453,4 +471,4 @@ class BME280Recorder:
                 os.unlink(stopfn)
             if os.path.exists(progressfn):
                 os.unlink(progressfn)
-            
+
