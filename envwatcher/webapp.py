@@ -104,7 +104,7 @@ def start_recorder():
         plotsparam = ''
     else:
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
-        plotsparam = ', writeplots=({}, {})'.format(plotsdir, app.config['DEG_F'])
+        plotsparam = ", writeplots=('{}', {})".format(plotsdir, app.config['DEG_F'])
 
     code = dedent("""
     import time
