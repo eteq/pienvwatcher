@@ -440,7 +440,7 @@ class BME280Recorder:
                     plot_names = None
 
                 if progressfn:
-                    proc_time = sttime - time.time()
+                    proc_time = time.time() - sttime
                     with open(progressfn, 'w') as fw:
                         fw.write('Expires-on:')
                         fw.write(str(time.time() + (proc_time + waitsec)*2))
