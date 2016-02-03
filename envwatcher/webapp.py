@@ -17,7 +17,7 @@ DATASETS_DIR = 'datasets'
 PLOTS_DIR = 'plots'
 PROGRESS_NAME = 'recorder_progress'
 DEG_F = False
-MAKE_PLOTS_AT_SERIES_REQUEST = False
+ALWAYS_MAKE_PLOTS_AT_SERIES_REQUEST = False
 
 app = Flask(__name__.split('.')[0])
 app.config.from_object(__name__)
@@ -63,14 +63,14 @@ def index():
 @app.route("/series/<series_name>")
 def series(series_name):
     dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
-    if app.config['MAKE_PLOTS_AT_SERIES_REQUEST']:
+    infodct = {}
+    recorder_present = check_for_recorder(progressfn, infodct)
+    if app.config['ALWAYS_MAKE_PLOTS_AT_SERIES_REQUEST'] or not recorder_present:
         dsetfn = os.path.join(dsetdir, series_name + '_cal')
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
         plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
     else:
         progressfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
-        infodct = {}
-        check_for_recorder(progressfn, infodct)
         plot_names = [pair.split(',') for pair in infodct['Plot names'].split(';')]
 
     plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time()))
@@ -100,7 +100,7 @@ def start_recorder():
 
     recfn = os.path.abspath(os.path.join(dsetdir, series_name))
 
-    if app.config['MAKE_PLOTS_AT_SERIES_REQUEST']:
+    if app.config['ALWAYS_MAKE_PLOTS_AT_SERIES_REQUEST']:
         plotsparam = ''
     else:
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
