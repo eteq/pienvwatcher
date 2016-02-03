@@ -71,7 +71,7 @@ def series(series_name):
         progressfn = os.path.join(dsetdir, app.config['PROGRESS_NAME'])
         infodct = {}
         check_for_recorder(progressfn, infodct)
-        plot_names = infodct['Plot names']
+        plot_names = [pair.split(',') for pair in infodct['Plot names'].split(';')]
 
     plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time()))
              for nm, path in plot_names]

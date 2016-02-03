@@ -461,10 +461,10 @@ class BME280Recorder:
 
                         if plot_names is not None:
                             fw.write('Plot names: ')
-                            for i, name in enumerate(plot_names):
+                            for i, (name, path) in enumerate(plot_names):
                                 if i!=0:
-                                    fw.write(', ')
-                                fw.write(name)
+                                    fw.write(';')
+                                fw.write(name + ',' + path)
                             fw.write('\n')
 
                 timeleft = sttime - time.time() + waitsec
