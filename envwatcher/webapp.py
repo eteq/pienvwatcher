@@ -110,9 +110,10 @@ def start_recorder():
     code = dedent("""
     import time
     from envwatcher.bme280 import BME280Recorder
+    from envwatcher.file_recorder import output_session_file
     b = BME280Recorder()
     b.read()
-    b.output_session_file('{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
+    output_session_file(b, '{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
     """).format(**locals()).strip()
 
     p = subprocess.Popen([sys.executable, '-c', ';'.join(code.split('\n'))],
