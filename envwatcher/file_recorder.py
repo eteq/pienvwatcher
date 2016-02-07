@@ -135,7 +135,7 @@ def led_on(progress_info={}):
                                             ' Need to do "sudo chmod o+w '
                                             '{}shot"').format(LED_PATH)
     elif '[gpio]' in triggerinfo:
-        GPIO.setmode(LED_GPIO_NUM, GPIO.OUT)
+        GPIO.setup(LED_GPIO_NUM, GPIO.OUT)
         GPIO.output(LED_GPIO_NUM, 1)
         progress_info['LED setting'] = 'GPIO'
     else:
