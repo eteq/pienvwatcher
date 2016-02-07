@@ -72,7 +72,7 @@ def series(series_name):
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
         plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
     else:
-        plot_names = [pair.split(',') for pair in infodct['Plot names'].split(';')]
+        plot_names = [pair.split('|') for pair in infodct['Plot names'].split(', ')]
 
     plots = [dict(name=nm, path='/plots/{}?{}'.format(path,time.time()))
              for nm, path in plot_names]
