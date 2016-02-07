@@ -78,9 +78,11 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
                 plot_names = None
 
             proc_time = time.time() - sttime
-            progress_info = {'Expires-on': str(time.time() + (proc_time + waitsec)*2),
-                             'PID': str(os.getpid()),
-                             'Output(s)': []}
+            progress_info.update({
+                            'Expires-on': str(time.time() + (proc_time + waitsec)*2),
+                            'PID': str(os.getpid()),
+                            'Output(s)': []
+                            })
             if writecal:
                 progress_info['Output(s)'].append(fncal)
             if writeraw:
@@ -118,6 +120,7 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
         if os.path.exists(progressfn):
             os.unlink(progressfn)
 
+
 def led_on(progress_info={}):
     with open(LED_PATH + 'trigger', 'r') as f:
         triggerinfo = f.read()
@@ -137,6 +140,7 @@ def led_on(progress_info={}):
     else:
         # do nothing because we can't do anything
         progress_info['LED setting'] = 'No LED setting option available'
+
 
 def led_off(progress_info={}):
     with open(LED_PATH + 'trigger', 'r') as f:
