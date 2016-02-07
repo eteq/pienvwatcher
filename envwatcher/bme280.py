@@ -113,7 +113,7 @@ class BME280Recorder:
 
         self.bus.write_byte_data(self.address, regaddr, new_regval)
 
-    def _read_raw(self):
+    def read_raw(self, doforce=True):
         """
         Reads the pressure, temperature, and humidity from their registers and
         returns them as raw ADC integers.
@@ -121,6 +121,11 @@ class BME280Recorder:
         Note that this does *not* force a read in forced mode - use `read` for
         that.
         """
+        if doforce and self._mode == 'forced':
+            self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
+            # wait for a ms, which should be plenty of time
+            time.sleep(0.001)
+
         data_regs = self.bus.read_i2c_block_data(0x77, DATA_START, 8)
 
         pres_val = data_regs[2] >> 4
@@ -135,26 +140,24 @@ class BME280Recorder:
 
         return pres_val, temp_val, hum_val
 
-    def read(self, raw=True):
+    def read(self, read_raw=None):
         """
         Reads the current pressure, temperature, humidity values and returns
-        them.  If `raw` is True, it is the raw ADC value, otherwise it's the
-        calibrated value.
-        """
-        if self._mode == 'forced':
-            self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
-            # wait for a ms, which should be plenty of time
-            time.sleep(0.001)
+        them.
 
-        pres_raw, temp_raw, hum_raw = self._read_raw()
-        if raw:
-            return pres_raw, temp_raw, hum_raw
+        If `read_raw` is given, it's an already-read set of raw values.
+        """
+        if read_raw is None:
+            pres_raw, temp_raw, hum_raw = self.read_raw()
         else:
-            t_fine_in = -self._raw_to_t_fine(temp_raw)
-            temp = self.raw_to_calibrated_temp(t_fine_in)
-            pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
-            hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
-            return pres, temp, hum
+            pres_raw, temp_raw, hum_raw = read_raw
+
+        t_fine_in = -self._raw_to_t_fine(temp_raw)
+        temp = self.raw_to_calibrated_temp(t_fine_in)
+        pres = self.raw_to_calibrated_pressure(pres_raw, t_fine_in)
+        hum = self.raw_to_calibrated_humidity(hum_raw, t_fine_in)
+        return pres, temp, hum
+
 
     def _raw_to_t_fine(self, rawtemp):
         """

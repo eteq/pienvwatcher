@@ -53,19 +53,20 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
             if setled:
                 led_on(progress_info)
 
-            pres_raw, temp_raw, hum_raw = bme280.read()
+            raw = bme280.read_raw()
 
             if writeraw:
                 with open(fnraw, 'a') as f:
-                    f.write(','.join([timestr, str(pres_raw), str(temp_raw), str(hum_raw)]) + '\n')
+                    towrite = [timestr]
+                    towrite.extend([str(r) for r in raw])
+                    f.write(','.join(towrite))
+                    f.write('\n')
 
             if writecal:
-                t_fine_in = -bme280._raw_to_t_fine(temp_raw)
-                temp = bme280.raw_to_calibrated_temp(t_fine_in)
-                pres = bme280.raw_to_calibrated_pressure(pres_raw, t_fine_in)
-                hum = bme280.raw_to_calibrated_humidity(hum_raw, t_fine_in)
+                pres, temp, hum = bme280.read(raw)
                 with open(fncal, 'a') as f:
-                    f.write(','.join([timestr, str(pres), str(temp), str(hum)]) + '\n')
+                    f.write(','.join([timestr, str(pres), str(temp), str(hum)]))
+                    f.write('\n')
 
             if writeplots:
                 if isinstance(writeplots, str):
