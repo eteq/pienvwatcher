@@ -77,6 +77,7 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
             else:
                 plot_names = None
 
+            proc_time = time.time() - sttime
             progress_info = {'Expires-on': str(time.time() + (proc_time + waitsec)*2),
                              'PID': str(os.getpid()),
                              'Output(s)': []}
@@ -93,7 +94,6 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
                     plotnames.append(name + '|' + path)
 
             if progressfn:
-                proc_time = time.time() - sttime
                 with open(progressfn, 'w') as fw:
                     for nm, val in progress_info.items():
                         fw.write(nm)
