@@ -139,7 +139,9 @@ def led_on(progress_info={}):
         progress_info['LED setting'] = 'GPIO'
     else:
         # do nothing because we can't do anything
-        progress_info['LED setting'] = 'No LED setting option available'
+        progress_info['LED setting'] = ('No LED setting option available.  You '
+                                        'probably want to send either "gpio" or'
+                                        ' "oneshot" to {}trigger').format(LED_PATH)
 
 
 def led_off(progress_info={}):
