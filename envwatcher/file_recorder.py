@@ -6,8 +6,9 @@ from .utils import check_for_recorder
 from RPi import GPIO
 GPIO.setmode(GPIO.BCM)
 
+# These are for the ACT LED on the RPi 2 B (40 pins)
 LED_PATH = '/sys/class/leds/led0/'
-LED_GPIO_NUM = 16
+LED_GPIO_NUM = 47
 
 def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
                                 progressfn=None, writeplots=False, setled=True):
@@ -137,7 +138,7 @@ def led_on(progress_info={}):
     elif '[gpio]' in triggerinfo:
         GPIO.setup(LED_GPIO_NUM, GPIO.OUT)
         GPIO.output(LED_GPIO_NUM, 1)
-        progress_info['LED setting'] = 'GPIO'
+        progress_info['LED setting'] = 'GPIO on Pin {}'.format(LED_GPIO_NUM)
     else:
         # do nothing because we can't do anything
         progress_info['LED setting'] = ('No LED setting option available.  You '
