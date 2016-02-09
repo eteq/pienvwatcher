@@ -69,7 +69,7 @@ def series(series_name):
 
     if (app.config['ALWAYS_MAKE_PLOTS_AT_SERIES_REQUEST'] or
         not recorder_present or
-        infodct['Series_name'] != series_name):
+        infodct['Series name'].strip() != series_name.strip()):
         dsetfn = os.path.join(dsetdir, series_name + '_cal')
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
         plot_names = write_series_plots(dsetfn, plotsdir, app.config['DEG_F'])
