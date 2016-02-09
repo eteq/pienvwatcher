@@ -84,7 +84,8 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
                             'Expires-on': str(time.time() + (proc_time + waitsec)*2),
                             'PID': str(os.getpid()),
                             'Output(s)': [],
-                            'Sample-time(s)' : str(waitsec)
+                            'Sample-time(s)': str(waitsec),
+                            'Series name': os.path.split(fn)[1]
                             })
             if writecal:
                 progress_info['Output(s)'].append(fncal)
