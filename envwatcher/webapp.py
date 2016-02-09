@@ -110,9 +110,10 @@ def start_recorder():
         plotsparam = ", writeplots=('{}', {})".format(plotsdir, app.config['DEG_F'])
 
     code = dedent("""
+    import time
     from envwatcher.bme280 import BME280Recorder
     from envwatcher.file_recorder import output_session_file
-    print("Initalizing recorder")
+    print("Initalizing recorder at ", time.strftime('%m-%d-%Y %H:%M:%S',time.localtime()))
     b = BME280Recorder()
     b.read()
     print("Starting output session")
