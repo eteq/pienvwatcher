@@ -124,6 +124,7 @@ def start_recorder():
                              stdout=logf, stderr=subprocess.STDOUT)
         # make sure the process has time to actually start up but also die if it needs to
         time.sleep(3)
+        logf.flush()
 
     if p.poll() is None:
         return 'Recorder started!'
