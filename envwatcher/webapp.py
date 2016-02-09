@@ -115,10 +115,13 @@ def start_recorder():
     output_session_file(b, '{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
     """).format(**locals()).strip()
 
-    p = subprocess.Popen([sys.executable, '-c', ';'.join(code.split('\n'))],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    subproclogfn = progressfn + '.log'
+    with open(subproclogfn, 'a') as logf:
+        p = subprocess.Popen([sys.executable, '-c', ';'.join(code.split('\n'))],
+                             stdout=logf, stderr=subprocess.STDOUT)
+        # make sure the process has time to actually start up but also die if it needs to
+        time.sleep(3)
 
-    time.sleep(3)  # make sure the process has time to actually start up but also die if it needs to
     if p.poll() is None:
         return 'Recorder started!'
     else:
