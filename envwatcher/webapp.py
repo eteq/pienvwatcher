@@ -9,7 +9,7 @@ from flask import Flask, render_template, abort, send_file, request
 
 import matplotlib
 matplotlib.use('agg')  # non-interactive backend
-from .plots import write_series_plots
+from .plots import write_series_plots, make_bokeh_plots
 
 from .utils import check_for_recorder
 
@@ -145,3 +145,18 @@ def stop_recorder():
         f.write('Stop recording!')
 
     return 'Recorder will be stopped, although it may take roughly the wait time.'
+
+
+@app.route("/bokeh/<series_name>")
+def bokeh(series_name):
+    from bokeh import resources, embed
+
+    dsetdir = os.path.join(app.root_path, app.config['DATASETS_DIR'])
+    dsetfn = os.path.join(dsetdir, series_name + '_cal')
+
+    plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
+
+    res = make_bokeh_plots(dsetfn, plotsdir, app.config['DEG_F'])
+
+    return embed.standalone_html_page_for_models(res, resources.INLINE,
+                                         'Pienvwatcher (bokeh): ' + series_name)

@@ -95,3 +95,71 @@ def triple_plots(fntab):
 
     plt.tight_layout()
     plt.subplots_adjust(hspace=0)
+
+def make_bokeh_plots(dsetfn, outdir, ctof=False):
+    from bokeh.plotting import figure
+
+    dset_name = os.path.split(dsetfn)[-1]
+
+    if dset_name.endswith('_cal'):
+        dset_name = dset_name[:-4]
+    else:
+        raise ValueError('dsets have to end in _cal')
+
+    dset = read_dataset(dsetfn)
+    dts = [datetime.strptime(t.decode(), '%Y-%m-%d_%H:%M:%S') for i, t in enumerate(dset['time'])]
+    plotdates = date2num(dts)
+
+    firstdatestr = num2date(plotdates[0]).strftime('%Y-%m-%d')
+    lastdatestr = num2date(plotdates[-1]).strftime('%Y-%m-%d')
+    if firstdatestr == lastdatestr:
+        titlestr = firstdatestr
+    else:
+        titlestr = firstdatestr + ' to ' + lastdatestr
+
+    data_to_plot = {nm: dset[nm] for nm in dset.dtype.names[1:]}
+
+    if 'dewpoint' not in data_to_plot and ('temperature' in data_to_plot and
+                                           'humidity' in data_to_plot):
+        data_to_plot['dewpoint'] = temphum_to_dewpoint(data_to_plot['temperature'], data_to_plot['humidity'])
+
+    plot_names = []
+
+    figs = {}
+    for name, data in data_to_plot.items():
+        yunit = ''
+        if name == 'pressure':
+            yunit = 'kPa'
+        elif name == 'temperature' or name == 'dewpoint':
+            if ctof:
+                yunit = 'deg F'
+            else:
+                yunit = 'deg C'
+        elif name == 'humidity':
+            yunit = 'RH %'
+
+        figs[name] = p = figure(title="",
+                                x_axis_label='Time',
+                                y_axis_label='{} ({})'.format(name, yunit))
+
+        if ctof and (name=='temperature' or name=='dewpoint'):
+            data = deg_c_to_f(data)
+
+        p.line(plotdates, data)
+
+    figlst = []
+    extrafigs = []
+    for n, fig in figs.items():
+        if n == 'temperature':
+            figlst.append(fig)
+        elif n == 'dewpoint':
+            figlst.append(fig)
+        elif n == 'humidity':
+            figlst.append(fig)
+        elif n == 'pressure':
+            figlst.append(fig)
+        else:
+            extrafigs.append(fig)
+    figlst.extend(extrafigs)
+
+    return figlst
