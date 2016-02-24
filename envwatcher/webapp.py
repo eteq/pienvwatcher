@@ -156,7 +156,14 @@ def bokeh(series_name):
 
     plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
 
-    res = make_bokeh_plots(dsetfn, plotsdir, app.config['DEG_F'])
+    figs = make_bokeh_plots(dsetfn, plotsdir, app.config['DEG_F'])
 
-    return embed.standalone_html_page_for_models(res, resources.INLINE,
+    figlist = [figs.pop('temperature', None),
+               figs.pop('dewpoint', None),
+               figs.pop('humidity', None),
+               figs.pop('pressure', None)]
+    figlist.extend(figs.values())
+    figlist = [fig for fig in figlist if fig is not None]
+
+    return embed.standalone_html_page_for_models(figlist, resources.INLINE,
                                          'Pienvwatcher (bokeh): ' + series_name)

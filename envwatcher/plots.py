@@ -147,19 +147,4 @@ def make_bokeh_plots(dsetfn, outdir, ctof=False):
 
         p.line(plotdates, data)
 
-    figlst = []
-    extrafigs = []
-    for n, fig in figs.items():
-        if n == 'temperature':
-            figlst.append(fig)
-        elif n == 'dewpoint':
-            figlst.append(fig)
-        elif n == 'humidity':
-            figlst.append(fig)
-        elif n == 'pressure':
-            figlst.append(fig)
-        else:
-            extrafigs.append(fig)
-    figlst.extend(extrafigs)
-
-    return figlst
+    return figs
