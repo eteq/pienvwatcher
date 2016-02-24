@@ -108,14 +108,7 @@ def make_bokeh_plots(dsetfn, outdir, ctof=False):
 
     dset = read_dataset(dsetfn)
     dts = [datetime.strptime(t.decode(), '%Y-%m-%d_%H:%M:%S') for i, t in enumerate(dset['time'])]
-    plotdates = date2num(dts)
-
-    firstdatestr = num2date(plotdates[0]).strftime('%Y-%m-%d')
-    lastdatestr = num2date(plotdates[-1]).strftime('%Y-%m-%d')
-    if firstdatestr == lastdatestr:
-        titlestr = firstdatestr
-    else:
-        titlestr = firstdatestr + ' to ' + lastdatestr
+    plotarrs = np.array(dts, dtype='datetime64[ms]')
 
     data_to_plot = {nm: dset[nm] for nm in dset.dtype.names[1:]}
 
@@ -140,11 +133,12 @@ def make_bokeh_plots(dsetfn, outdir, ctof=False):
 
         figs[name] = p = figure(title="",
                                 x_axis_label='Time',
+                                x_axis_type="datetime",
                                 y_axis_label='{} ({})'.format(name, yunit))
 
         if ctof and (name=='temperature' or name=='dewpoint'):
             data = deg_c_to_f(data)
 
-        p.line(plotdates, data)
+        p.line(plotarrs, data)
 
     return figs
