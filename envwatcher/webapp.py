@@ -103,7 +103,7 @@ def start_recorder():
 
     recfn = os.path.abspath(os.path.join(dsetdir, series_name))
 
-    if app.config['MAKE_PLOTS_CONTINUOUSLY']:
+    if not app.config['MAKE_PLOTS_CONTINUOUSLY']:
         plotsparam = ''
     else:
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
