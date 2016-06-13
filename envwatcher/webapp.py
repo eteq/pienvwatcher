@@ -132,8 +132,9 @@ def start_recorder():
     if p.poll() is None:
         return 'Recorder started!'
     else:
-        stdouterr = p.communicate()[0]
-        return 'Starting recorder failed with: <br><pre>' + stdouterr.decode() + '</pre>'
+        with open(subproclogfn, 'r') as logf:
+            stdouterr = logf.read()
+        return 'Starting recorder failed with: <br><pre>' + stdouterr + '</pre>'
 
 
 @app.route("/stop_recorder", methods=['POST'])
