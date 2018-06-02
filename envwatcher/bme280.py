@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 
 import numpy as np
 import smbus
@@ -60,6 +61,8 @@ class BME280Recorder:
 
         self.calib_vals = self.get_calibs()
 
+        self.sleep_factor = 5  # set to 0 to mimize read latency
+
     def check_device_present(self):
         devid = self.read_register(ID_REGISTER)
         if devid != BME280_ID:
@@ -71,6 +74,10 @@ class BME280Recorder:
         self.check_device_present()
 
     def get_calibs(self):
+        # need to wait for the calibration parameters to finish copying if
+        # this is tried right after a reset.
+        while self.is_im_updating():
+            time.sleep(.001)
         calib_vals = {}
         for nm, typeandregs in CALIB_REGISTERS.items():
             dt = typeandregs[0]
@@ -118,13 +125,23 @@ class BME280Recorder:
         Reads the pressure, temperature, and humidity from their registers and
         returns them as raw ADC integers.
 
-        Note that this does *not* force a read in forced mode - use `read` for
-        that.
+        Note that if `doforce` is False and the device is in forced mode, a new
+        measurement will *not* be made.
         """
         if doforce and self._mode == 'forced':
             self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
-            # wait for a ms, which should be plenty of time
-            time.sleep(0.001)
+
+            # need to wait for the measurement to be done. For the default mode
+            # this seems to be ~10 ms, but it could be down to ~1 ms or as high
+            # as a few hundred.  So we check the status register at a rate
+            # based on the estimate from datasheet section 9.1
+            if self.sleep_factor == 0:
+                while self.is_measuring():
+                    continue
+            else:
+                sleep_time = self.t_measure_estimate[0] / self.sleep_factor / 1000.
+                while self.is_measuring():
+                    time.sleep(sleep_time)
 
         data_regs = self.bus.read_i2c_block_data(0x77, DATA_START, 8)
 
@@ -378,6 +395,39 @@ class BME280Recorder:
         self._iir_filter = val
 
 
+    def is_measuring(self):
+        """
+        Returns True if the device is actively measuring, False if not.
+        """
+        # 5.4.4 of the datasheet indicates the relevant bit
+        return bool(self.read_register(STATUS_REGISTER) & 0b1000)
+
+
+    def is_im_updating(self):
+        """
+        Returns True if the device is updating the calibration parameters,
+        False if not. The datasheet seems to say this should only occur right
+        after a reset. Tests suggests this takes a few milliseconds.
+        """
+        # 5.4.4 of the datasheet indicates the relevant bit
+        return bool(self.read_register(STATUS_REGISTER) & 0b1)
+
+    @property
+    def t_measure_estimate(self):
+        """
+        Uses the current settings to estimate the likely measurement time, 
+        based on datasheet section 9.1.
+
+        Returns a 2-tuple with the typical and max, in milliseconds
+        """
+        ho = self.humidity_oversampling
+        to = self.temperature_oversampling
+        po = self.pressure_oversampling
+        typ = 1. + 2.*to + (2.*po + 0.5)*bool(po) + (2.*ho +0.5)*bool(ho)
+        mx = 1.25 + 2.3*to + (2.3*po + 0.575)*bool(po) + (2.3*ho +0.575)*bool(ho)
+        return typ, mx
+
+
     def read_to_binary(self, address1, address2=None):
         """
         This is primarily for debugging purposes: it reads a register (or 2 
@@ -393,3 +443,28 @@ class BME280Recorder:
                 b = '0'*(8-len(b)) + b
                 valb += b
         return valb
+
+
+    def test_read_time(self):
+        """
+        Primarily for debugging/testing: does a read and then waits for
+        measurement to finish. Returns the time that takes in ms.
+        """
+        oldmode = self.mode
+        try:
+            self.mode = 'forced'
+            while self.is_measuring():
+                continue  # clear out any existing measurement in progress
+
+            i = 0
+            self.set_register(CTRL_MEAS_REGISTER, 0b01, 0, 2)
+            t1 = time.time()
+            while self.is_measuring():
+                i += 1
+            t2 = time.time()
+            if i < 2:
+                warnings.warn("less than two cycles passed.  test_read_time may not be accurate")
+
+            return (t2 - t1)*1000
+        finally:
+            self.mode = oldmode
