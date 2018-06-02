@@ -42,6 +42,7 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
 
     try:
         time.sleep(waitsec)
+        oldraw = raw_match = None
         while True:
             if os.path.exists(stopfn):
                 break
@@ -55,6 +56,18 @@ def output_session_file(bme280, fn, waitsec=30, writecal=True, writeraw=True,
                 led_on(progress_info)
 
             raw = bme280.read_raw()
+            if raw == oldraw:
+                # danger sign... if they are *exactly* the same the reader may 
+                # have gotten stuck.  If it happens again, reset
+                if raw_match:
+                    # guess we've got to reset...
+                    progress_info['Reset-occurred'] = True
+                    bme280.reset_device()
+                else:
+                    raw_match = True
+            else:
+                raw_match = False
+            oldraw = raw
 
             if writeraw:
                 with open(fnraw, 'a') as f:
