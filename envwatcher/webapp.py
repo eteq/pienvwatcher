@@ -109,13 +109,14 @@ def start_recorder():
         plotsdir = os.path.join(app.root_path, app.config['PLOTS_DIR'])
         plotsparam = ", writeplots=('{}', {})".format(plotsdir, app.config['DEG_F'])
 
+    # the read() call below ensures everything is ready to go...
     code = dedent("""
     import time
     from envwatcher.bme280 import BME280Recorder
     from envwatcher.file_recorder import output_session_file
     print("Initalizing recorder at ", time.strftime('%m-%d-%Y %H:%M:%S',time.localtime()))
     b = BME280Recorder()
-    b.read()  # ensures everything is ready to go...
+    b.read()
     print("Starting output session")
     output_session_file(b, '{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
     print("Finished output session")
