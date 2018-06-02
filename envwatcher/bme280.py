@@ -376,3 +376,20 @@ class BME280Recorder:
 
         self.set_register(CONFIG_REGISTER, regval, 0, 3)
         self._iir_filter = val
+
+
+    def read_to_binary(self, address1, address2=None):
+        """
+        This is primarily for debugging purposes: it reads a register (or 2 
+        registers) and returns a binary representation of the values
+        """
+        val1 = self.read_register(address1)
+        val2 = None if address2 is None else self.read_register(address2)
+
+        valb = '0b'
+        for val in (val1, val2):
+            if val is not None:
+                b = bin(val)[2:]
+                b = '0'*(8-len(b)) + b
+                valb += b
+        return valb
