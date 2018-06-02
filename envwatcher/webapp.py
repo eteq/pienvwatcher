@@ -115,7 +115,7 @@ def start_recorder():
     from envwatcher.file_recorder import output_session_file
     print("Initalizing recorder at ", time.strftime('%m-%d-%Y %H:%M:%S',time.localtime()))
     b = BME280Recorder()
-    b.read()
+    b.read()  # ensures everything is ready to go...
     print("Starting output session")
     output_session_file(b, '{recfn}', {waittime}, progressfn='{progressfn}'{plotsparam})
     print("Finished output session")
